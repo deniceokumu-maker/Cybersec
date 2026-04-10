@@ -14,18 +14,12 @@ st.set_page_config(page_title="Cybersecurity Dashboard", layout="centered")
 # ---------------------------
 st.markdown("""
 <style>
-
-/* Background */
 .stApp {
     background: linear-gradient(to right, #eef2f3, #dfe9f3);
 }
-
-/* Dark mode */
 [data-theme="dark"] .stApp {
     background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
 }
-
-/* Main container */
 .main-container {
     background: white;
     padding: 30px;
@@ -33,108 +27,61 @@ st.markdown("""
     max-width: 900px;
     margin: auto;
     box-shadow: 0px 6px 25px rgba(0,0,0,0.2);
-    animation: fadeIn 1s ease-in;
 }
-
-/* Dark container */
 [data-theme="dark"] .main-container {
     background: #1e1e1e;
     color: white;
 }
-
-/* Buttons */
 .stButton > button {
     background: #2c5364;
     color: white;
     border-radius: 12px;
     height: 3em;
-    font-size: 16px;
-    transition: 0.3s;
 }
-.stButton > button:hover {
-    background: #1b3c4a;
-    transform: scale(1.05);
-}
-
-/* Cards */
 .card {
     padding: 15px;
     border-radius: 15px;
     margin-top: 10px;
     background: #f7f9fc;
-    box-shadow: 0px 2px 10px rgba(0,0,0,0.1);
 }
 [data-theme="dark"] .card {
     background: #2a2a2a;
 }
-
-/* Sidebar */
-section[data-testid="stSidebar"] {
-    background: linear-gradient(to bottom, #2c5364, #203a43);
-    color: white;
-}
-
-/* Animation */
-@keyframes fadeIn {
-    from {opacity: 0;}
-    to {opacity: 1;}
-}
-
 </style>
 """, unsafe_allow_html=True)
 
 # ---------------------------
-# SIDEBAR LEARNING HUB
+# SIDEBAR
 # ---------------------------
 st.sidebar.title("📚 Cybersecurity Learning Hub")
 
 with st.sidebar.expander("🔑 Password Security"):
-    st.markdown("""
-- Use strong passwords (8+ characters)
-- Include uppercase, numbers, symbols
-- Avoid common passwords
-""")
+    st.write("Use strong passwords with symbols and numbers.")
 
 with st.sidebar.expander("⚠️ Phishing Awareness"):
-    st.markdown("""
-- Avoid suspicious links
-- Verify email senders
-- Watch for urgency scams
-""")
+    st.write("Avoid clicking suspicious links.")
 
 with st.sidebar.expander("🔐 MFA"):
-    st.markdown("""
-- Adds extra security layer
-- Protects even if password is stolen
-""")
+    st.write("Enable multi-factor authentication.")
 
 with st.sidebar.expander("🔄 Updates"):
-    st.markdown("""
-- Fix vulnerabilities
-- Always enable auto-updates
-""")
+    st.write("Always keep software updated.")
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("🌐 Trusted Resources")
-
 st.sidebar.markdown("""
 - [NIST Cybersecurity Framework](https://www.nist.gov/cyberframework)  
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)  
-- [CISA Cybersecurity](https://www.cisa.gov/)  
-- [Stay Safe Online](https://staysafeonline.org/)  
+- [CISA](https://www.cisa.gov/)  
 """)
 
 # ---------------------------
 # DARK MODE
 # ---------------------------
 theme = st.toggle("🌗 Dark Mode")
-
 if theme:
     st.markdown('<div data-theme="dark">', unsafe_allow_html=True)
 
-# ---------------------------
-# MAIN CONTAINER
-# ---------------------------
 st.markdown('<div class="main-container">', unsafe_allow_html=True)
 
 # ---------------------------
@@ -146,64 +93,86 @@ model = joblib.load("cyber_model.pkl")
 # HEADER
 # ---------------------------
 st.title("🔐 Cybersecurity Risk Dashboard")
-st.markdown("### Analyze your behavior and improve your security posture")
-st.markdown("---")
 
 # ---------------------------
-# PASSWORD FUNCTION
+# PASSWORD STRENGTH FUNCTION
 # ---------------------------
 def password_strength(password):
     score = 0
+    feedback = []
+
     if len(password) >= 8:
         score += 1
+    else:
+        feedback.append("Use at least 8 characters")
+
     if re.search(r"[A-Z]", password):
         score += 1
+    else:
+        feedback.append("Add uppercase letters")
+
     if re.search(r"[0-9]", password):
         score += 1
+    else:
+        feedback.append("Include numbers")
+
     if re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
         score += 1
+    else:
+        feedback.append("Add special characters")
 
     if score <= 1:
-        return "Weak", 2
+        return "Weak", 25, "#ff4d4d", feedback, 2
     elif score <= 3:
-        return "Medium", 1
+        return "Medium", 60, "#ffa500", feedback, 1
     else:
-        return "Strong", 0
+        return "Strong", 100, "#28a745", feedback, 0
 
 # ---------------------------
-# INPUT SECTION
+# INPUT
 # ---------------------------
-st.subheader("🧾 Enter Your Security Details")
+password_input = st.text_input("🔑 Enter Password", type="password")
 
-col1, col2 = st.columns(2)
+# PASSWORD METER
+if password_input:
+    label, percent, color, feedback, score_pw = password_strength(password_input)
 
-with col1:
-    password_input = st.text_input("🔑 Password")
-    clicks = st.selectbox("⚠️ Click Suspicious Links?", ["Yes", "No"])
+    st.markdown(f"""
+    <div style="margin-top:10px;">
+        <div style="height:10px; width:100%; background:#ddd; border-radius:5px;">
+            <div style="width:{percent}%; height:10px; background:{color}; border-radius:5px;"></div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-with col2:
-    mfa = st.selectbox("🔐 Uses MFA?", ["Yes", "No"])
-    update = st.selectbox("🔄 Update Frequency", ["Rare", "Occasional", "Frequent"])
+    st.markdown(f"<div class='card'>🔑 Password Strength: <b style='color:{color}'>{label}</b></div>", unsafe_allow_html=True)
 
-clicks_map = {"Yes": 1, "No": 0}
-mfa_map = {"Yes": 0, "No": 1}
-update_map = {"Rare": 2, "Occasional": 1, "Frequent": 0}
+    if feedback:
+        st.markdown("<div class='card'>💡 Suggestions:</div>", unsafe_allow_html=True)
+        for tip in feedback:
+            st.write(f"- {tip}")
+else:
+    score_pw = None
+    label = None
+
+clicks = st.selectbox("Clicks suspicious links?", ["Yes","No"])
+mfa = st.selectbox("Uses MFA?", ["Yes","No"])
+update = st.selectbox("Update frequency", ["Rare","Occasional","Frequent"])
+
+clicks_map = {"Yes":1,"No":0}
+mfa_map = {"Yes":0,"No":1}
+update_map = {"Rare":2,"Occasional":1,"Frequent":0}
 
 # ---------------------------
 # RECOMMENDATIONS
 # ---------------------------
 def get_recommendation(password_label, clicks, mfa, update):
     recs = []
-    if password_label == "Weak":
-        recs.append("Use a strong password")
-    if mfa == "No":
-        recs.append("Enable MFA")
-    if clicks == "Yes":
-        recs.append("Avoid suspicious links")
-    if update == "Rare":
-        recs.append("Update software regularly")
-    if not recs:
-        recs.append("Maintain good practices")
+    if password_label == "Weak": recs.append("Use stronger password")
+    if mfa == "No": recs.append("Enable MFA")
+    if clicks == "Yes": recs.append("Avoid suspicious links")
+    if update == "Rare": recs.append("Update software regularly")
+    if not recs: recs.append("Maintain good practices")
     return recs
 
 # ---------------------------
@@ -213,100 +182,121 @@ def get_learning_resources(risk, password_label, clicks, mfa, update):
     resources = []
 
     if risk == "High":
-        resources.append(("NIST Cybersecurity Framework", "https://www.nist.gov/cyberframework"))
-        resources.append(("OWASP Top 10", "https://owasp.org/www-project-top-ten/"))
+        resources += [
+            ("NIST Cybersecurity Framework", "https://www.nist.gov/cyberframework"),
+            ("OWASP Top 10", "https://owasp.org/www-project-top-ten/"),
+            ("CISA Guide", "https://www.cisa.gov/")
+        ]
+    elif risk == "Medium":
+        resources += [
+            ("OWASP Awareness", "https://owasp.org/www-project-security-awareness/"),
+            ("Google Security Tips", "https://safety.google/security/security-tips/")
+        ]
+    elif risk == "Low":
+        resources += [
+            ("NIST Password Guidelines", "https://pages.nist.gov/800-63-3/"),
+            ("CISA Best Practices", "https://www.cisa.gov/")
+        ]
 
     if password_label == "Weak":
-        resources.append(("NIST Password Guidelines", "https://pages.nist.gov/800-63-3/"))
-
+        resources.append(("Password Guide", "https://pages.nist.gov/800-63-3/"))
     if clicks == "Yes":
         resources.append(("Phishing Prevention", "https://owasp.org/www-community/attacks/Phishing"))
-
     if mfa == "No":
-        resources.append(("CISA MFA Guide", "https://www.cisa.gov/mfa"))
-
+        resources.append(("MFA Guide", "https://www.cisa.gov/mfa"))
     if update == "Rare":
-        resources.append(("Stay Safe Online", "https://staysafeonline.org/resources/"))
+        resources.append(("Update Importance", "https://staysafeonline.org/resources/"))
 
     return list(set(resources))
 
 # ---------------------------
 # ANALYZE
 # ---------------------------
-st.markdown("---")
-
 if st.button("🚀 Analyze Risk"):
     if password_input:
 
-        password_label, password_score = password_strength(password_input)
-
         values = [
-            password_score,
+            score_pw,
             clicks_map[clicks],
             mfa_map[mfa],
             update_map[update]
         ]
 
-        input_data = pd.DataFrame([values], columns=[
+        df_input = pd.DataFrame([values], columns=[
             'Password_Strength',
             'Clicks_Suspicious_Links',
             'Uses_MFA',
             'Update_Frequency'
         ])
 
-        prediction = model.predict(input_data)[0]
-        risk_map = {0: "Low", 1: "Medium", 2: "High"}
-        risk = risk_map[prediction]
+        pred = model.predict(df_input)[0]
+        risk_map = {0:"Low",1:"Medium",2:"High"}
+        risk = risk_map[pred]
 
-        # RESULTS
-        st.subheader("📊 Results")
+        st.subheader(f"⚠️ Risk Level: {risk}")
 
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
+        # Security Score
+        score = int((1 - (sum(values)/(len(values)*2))) * 100)
+        st.progress(score/100)
+        st.write(f"Security Score: {score}%")
 
-        if risk == "High":
-            st.error("⚠️ High Risk")
-        elif risk == "Medium":
-            st.warning("⚠️ Medium Risk")
-        else:
-            st.success("✅ Low Risk")
-
-        st.write(f"🔑 Password Strength: {password_label}")
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        # SECURITY SCORE
-        score = int((1 - (sum(values) / (len(values) * 2))) * 100)
-
-        st.subheader("📊 Security Score")
-        st.progress(score / 100)
-        st.write(f"Score: {score}%")
-
-        # RECOMMENDATIONS
+        # Recommendations
         st.subheader("🔐 Recommendations")
-        for rec in get_recommendation(password_label, clicks, mfa, update):
-            st.markdown(f"<div class='card'>✔ {rec}</div>", unsafe_allow_html=True)
+        for r in get_recommendation(label, clicks, mfa, update):
+            st.markdown(f"<div class='card'>✔ {r}</div>", unsafe_allow_html=True)
 
-        # VISUALS
+        # ---------------------------
+        # VISUAL DASHBOARD
+        # ---------------------------
+        st.subheader("📊 Security Behavior Analysis")
+
         df = pd.DataFrame({
             "Behavior": ["Password", "Links", "MFA", "Updates"],
-            "Risk Score": values
+            "Score": values
         })
 
         col1, col2 = st.columns(2)
 
+        # BAR CHART
         with col1:
-            st.plotly_chart(px.bar(df, x="Behavior", y="Risk Score", text="Risk Score"))
+            fig_bar = px.bar(
+                df,
+                x="Behavior",
+                y="Score",
+                text="Score",
+                color="Score",
+                color_continuous_scale=["green", "orange", "red"]
+            )
+            fig_bar.update_layout(
+                title="Behavior Risk Scores",
+                yaxis_title="Risk Level (0=Low, 2=High)",
+                coloraxis_showscale=False
+            )
+            st.plotly_chart(fig_bar, use_container_width=True)
 
+        # PIE CHART
         with col2:
             pie_df = pd.DataFrame({
-                "Level": ["Low", "Medium", "High"],
-                "Count": [values.count(0), values.count(1), values.count(2)]
+                "Risk Level": ["Low", "Medium", "High"],
+                "Count": [
+                    values.count(0),
+                    values.count(1),
+                    values.count(2)
+                ]
             })
-            st.plotly_chart(px.pie(pie_df, names="Level", values="Count"))
 
-        # DYNAMIC RESOURCES
-        st.subheader("🌐 Recommended Learning Resources")
+            fig_pie = px.pie(
+                pie_df,
+                names="Risk Level",
+                values="Count",
+                title="Risk Distribution",
+                hole=0.4
+            )
+            st.plotly_chart(fig_pie, use_container_width=True)
 
-        for name, link in get_learning_resources(risk, password_label, clicks, mfa, update):
+        # Resources
+        st.subheader(f"🌐 Learning Resources for {risk} Risk Users")
+        for name, link in get_learning_resources(risk, label, clicks, mfa, update):
             st.markdown(f"<div class='card'>🔗 <a href='{link}' target='_blank'>{name}</a></div>", unsafe_allow_html=True)
 
     else:
